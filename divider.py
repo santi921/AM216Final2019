@@ -18,9 +18,7 @@ def single_folder(block_num, exp_num):
     stats = []
     
     for ind, file in enumerate(os.listdir('ML_block'+ str(block_num)+'_Exp'+ str(exp_num) +'/Contact')):
-        
-        raw_data = open('ML_block'+ str(block_num) +'_Exp'+ str(exp_num) +'/Contact/' + file, 'rt')
-        
+                
         ind = int(re.findall(r'\d+', file)[0])-1
         temp_time   = time_vector[ind]
         temp_shear  = shear_vector[ind]
@@ -28,11 +26,13 @@ def single_folder(block_num, exp_num):
         stats.append([ind,temp_time, temp_shear, temp_normal])
         
         
-        reader = csv.reader(raw_data, delimiter=',', quoting=csv.QUOTE_NONE)
-        x = list(reader)
-        
-    
-        data = np.array(x).astype('int')
+        #reader = csv.reader(raw_data, delimiter=',', quoting=csv.QUOTE_NONE)
+        #x = list(reader)
+        #data = np.array(x).astype('int')
+        data = pd.read_csv('ML_block1_Exp201/Contact/image_1_ML_block1_Exp201.csv', header = None).values
+
+        #pd.read_csv('ML_block'+ str(block_num) +'_Exp'+ str(exp_num) +'/Contact/' + file, header = None)
+
         dim = ((np.asarray(data.shape)+1)/2).astype('int')
         data = data[dim[0]-750:dim[0]+750, dim[1]-750:dim[1]+750]
 
@@ -45,7 +45,6 @@ def single_folder(block_num, exp_num):
     stats_numpy = np.array(stats).reshape(-1,4)
     stats_numpy = stats_numpy[stats_numpy[:,0].argsort()]
     np.savetxt("./sub_images"+ "/exp" + str(exp_num) + "_block" + str(block_num) + "/folder_stats.csv",stats_numpy , delimiter=",")
-
 
 
 

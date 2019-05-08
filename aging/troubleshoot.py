@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def time_plotter(length_index, files, Fs_label, Fn_label, T_label, split_images, crop_size, split_size):
+def time_plotter(length_index, files, Fs_label, Fn_label, T_label, split_images, crop_size, split_size, full = False):
     # Subplots are organized in a rows x cols Grid
     image_grid_size = int(crop_size**2 / split_size**2)
 
@@ -29,8 +29,10 @@ def time_plotter(length_index, files, Fs_label, Fn_label, T_label, split_images,
           # add every single subplot to the figure with a for loop
             for k in range(1, image_grid_size + 1): #Cycle through sub-images of image
                 ax = fig.add_subplot(rows, cols, k)
-                ax.matshow(split_images[arr_ind + k -1,:,:], cmap=plt.cm.gray)
+                ax.matshow(split_images[arr_ind*image_grid_size + k - 1], cmap=plt.cm.gray)
                 ax.set_xticks(())
                 ax.set_yticks(())
             plt.tight_layout()
             plt.show()
+            if not full:
+                break

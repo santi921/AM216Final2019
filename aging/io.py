@@ -90,15 +90,17 @@ def file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
 
 
 def subtractor(Fn, Fs, T, images):
-    # Make the values the final values
-    Fn = [Fn[-1]]
-    Fs = [Fs[-1]]
     #Take difference of time values
-    T = [T[-1] - T[0]]
+    T = T - T[0]
 
     # Make the image the difference between the final and initial block
-    images = (images[:,:,-1] - images[:,:,0]).clip(0)
+    for i in range(1, images.shape[2]):
+        images[:,:,i] = (images[:,:,i] - images[:,:,0]).clip(0)
     
+    T = T[1:]
+    Fn = Fn[1:]
+    Fs = Fs[1:]
+    images = images[:,:,1:]
     return (Fn, Fs, T, images)
     
     
@@ -138,15 +140,17 @@ def data_extractor(files, folders, direc = 'D:/MLdata/', crop_size = 750, split_
             length_index.append(len(Fn))
         else:
             print('ERROR: INCONSISTENT SIZE FOR FILE:', direc + folders[block_num - 1] + '/Extract Data/' + file)
+            print('Fn:', len(Fn), 'Fs:', len(Fs), 'T:', len(T))
             break
 
+        # Crop images to appropriate size
+        cropped_images = crop_center(images, crop_size)
 
         # Pull block and experiment values from filename
         block = np.repeat(block_num, len(T))
         exp = np.repeat(exp_num, len(T))
 
-        # Crop images to appropriate size
-        cropped_images = crop_center(images, crop_size)
+
 
         if len(cropped_images.shape) == 3:
             for i in range(cropped_images.shape[2]):
@@ -186,107 +190,3 @@ def data_extractor(files, folders, direc = 'D:/MLdata/', crop_size = 750, split_
     exp_label = np.array(exp_label)
     
     return (length_index, split_images, Fn_label, Fs_label, T_label, block_label, exp_label)
-
-def assemble_4_block(split_images, T_label, Fs_label, Fn_label, block_label, num_out = 1, log_time = True):
-    # Assemble targets, shuffle data, and assign training and testing sets
-    # Note that I use the log_time values currently.
-    # This makes time appear linearly spaced.  Perhaps helps CNN converge faster
-    # targets = np.vstack((log_T_label,Fn_label,Fs_label)).T
-    if log_time:
-        if num_out == 1:
-            targets = (np.log(T_label).T)
-        elif num_out == 2:
-            targets = np.vstack((np.log(T_label),Fs_label)).T
-        elif num_out == 3:
-            targets = np.vstack((np.log(T_label),Fs_label, Fn_label)).T
-        else:
-            print('ERROR: INCORRECT VALUE SPECIFIED FOR num_out!!!')
-    else:
-        if num_out == 1:
-            targets = (T_label.T)
-        elif num_out == 2:
-            targets = np.vstack((T_label,Fs_label)).T
-        elif num_out == 3:
-            targets = np.vstack((T_label,Fs_label, Fn_label)).T
-        else:
-            print('ERROR: INCORRECT VALUE SPECIFIED FOR num_out!!!')
-
-    test_block_ind = np.min(np.where(block_label == np.max(block_label)))
-    print('Test Block Index Completed...')
-
-    train_data = split_images[:test_block_ind].clip(0)
-    train_labels = targets[:test_block_ind]
-    print('Training Data and Labels Completed...', train_data.shape, train_labels.shape)
-
-    test_data = split_images[test_block_ind:].clip(0)
-    test_labels = targets[test_block_ind:]
-    print('Testing Data and Labels Completed...', test_data.shape, test_labels.shape)
-    
-    return (train_data, train_labels, test_data, test_labels)
-
-def assemble_1_block(split_images, T_label, Fs_label, Fn_label, block_label, image_grid_size, num_out = 1, log_time = True):
-    # Assemble targets, shuffle data, and assign training and testing sets
-    # Note that I use the log_time values currently.
-    # This makes time appear linearly spaced.  Perhaps helps CNN converge faster
-    # targets = np.vstack((log_T_label,Fn_label,Fs_label)).T
-    
-    if log_time:
-        if num_out == 1:
-            targets = (np.log(T_label).T)
-        elif num_out == 2:
-            targets = np.vstack((np.log(T_label), Fs_label)).T
-        elif num_out == 3:
-            targets = np.vstack((np.log(T_label), Fs_label, Fn_label)).T
-        else:
-            print('ERROR: INCORRECT VALUE SPECIFIED FOR num_out!!!')
-    else:
-        if num_out == 1:
-            targets = (T_label.T)
-        elif num_out == 2:
-            targets = np.vstack((T_label, Fs_label)).T
-        elif num_out == 3:
-            targets = np.vstack((T_label, Fs_label, Fn_label)).T
-        else:
-            print('ERROR: INCORRECT VALUE SPECIFIED FOR num_out!!!')
-
-    # I want to test if the Nueral Network works well on images it has NEVER
-    # seen before.  As such, I am careful to remove a specifc square from
-    # ALL the images for testing.  That way we can make sure it isn't just learning
-    # features of each square in the image.
-
-    # Obtain the sub_images we split the original image into
-    
-    subimage_ind = np.arange(0, image_grid_size)
-
-    # Randomnly choose a square of ALL images to remove
-    # so that we can test on it later.
-    np.random.shuffle(subimage_ind)
-    train_size = round((.8)*subimage_ind.shape[0])
-
-    test_index = []
-
-    # Fill data lists
-    for i in np.arange(0, (split_images.shape[0] / image_grid_size)):
-        test_index.append((i * image_grid_size) + subimage_ind[train_size:])
-
-    # Make sure index values are integers
-    test_index = np.array(test_index).astype(np.intc).flatten()
-    print('Test Index Completed...')
-
-    train_data = np.delete(split_images, test_index, axis = 0)
-    train_labels = np.delete(targets, test_index, axis = 0)
-    print('Training Data and Labels Completed...')
-
-    test_data = split_images[test_index]
-    test_labels = targets[test_index]
-    print('Testing Data and Labels Completed...')
-
-
-    # TROUBLESHOOTING: Plot an array of some of the images, to try visually confirm proper selection.
-    fig,ax = plt.subplots(4,8,figsize=(20,10))
-    for i in range(32):
-        ax[i//8,i%8].matshow(test_data[i],cmap=plt.cm.gray)
-        ax[i//8,i%8].set_xticks(())
-        ax[i//8,i%8].set_yticks(())
-        
-    return (train_data, train_labels, test_data, test_labels)

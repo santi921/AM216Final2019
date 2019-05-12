@@ -70,7 +70,7 @@ def rebin(a, shape):
     sh = shape[0],a.shape[0]//shape[0],shape[1],a.shape[1]//shape[1]
     return a.reshape(sh).mean(-1).mean(1)
 
-def file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
+def rand_file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
     """
     Obtains file names of the data we want to import.
     
@@ -95,6 +95,30 @@ def file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
             files.extend(temp)
     return (folders,files)
 
+def seq_file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
+    """
+    Obtains file names of the data we want to import.
+    DOES NOT RANDOMLY CHOOSE FILES.
+    
+    This function assumes data is in a folder of the form:
+        direc + folders[i] + '/Extract Data/'
+    
+    Inputs
+    direc: parent location of different samples
+    num_samples: number of samples we want to input
+    num_exps = number of TOTAL experiments we want to obtain
+    """
+    folders  = [filename for filename in os.listdir(direc)][:num_samples]
+    files = []
+    
+    for i in range(len(folders)):
+        if num_exps > 0:
+            temp = os.listdir(direc + folders[i] + '/Extract Data/')[:int(num_exps/len(folders))]
+            files.extend(temp)   
+        else:
+            temp = os.listdir(direc + folders[i] + '/Extract Data/')
+            files.extend(temp)
+    return (folders,files)
 
 def subtractor(Fn, Fs, T, images):
     #Take difference of time values
@@ -111,7 +135,7 @@ def subtractor(Fn, Fs, T, images):
     return (Fn, Fs, T, images)
     
     
-def data_extractor(files, folders, direc = 'D:/MLdata/', crop_size = 750, split_size = 250, clip_value = 10, subtract = False, log_image = True):
+def data_extractor(files, folders, direc = 'D:/MLdata/', crop_size = 750, split_size = 250, clip_value = 10, subtract = False, log_image = True, younger = 0):
     # Intialize Lists
     length_index = []
     split_images = []
@@ -139,6 +163,13 @@ def data_extractor(files, folders, direc = 'D:/MLdata/', crop_size = 750, split_
             continue
 
         images = data['images'].astype(np.float)
+        
+        if younger > 0:
+            nomorethan = np.where(T>younger)[0][0]
+            Fn = Fn[:nomorethan]
+            Fs = Fs[:nomorethan]
+            T = T[:nomorethan]
+            images = images[:, :, :nomorethan]
         
         if images.shape[0] < crop_size or images.shape[1] < crop_size:
             raise Exception('Crop_size should not exceed the size of the sample. The sample size was: {}'.format(images.shape[:2]))

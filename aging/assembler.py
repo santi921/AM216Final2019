@@ -11,13 +11,13 @@ import random
 random.seed(135)
 np.random.seed(135)
 
-def assemble_old(split_images, label_dic, block_label, log_time = True):
+def assemble_old(split_images, ML_labels, label_dic, log_time = True):
     # Assemble targets, shuffle data, and assign training and testing sets
     # Note that I use the log_time values currently.
     # This makes time appear linearly spaced.  Perhaps helps CNN converge faster
     # Obtain indicies for the items
     label_list = []
-    for key in label_dic:
+    for key in ML_labels:
         if key == 'T' and log_time:
             label_list.append(np.log(label_dic[key]))
         else:
@@ -76,18 +76,18 @@ def assemble_4_block(split_images, label_dic, block_label, log_time = True):
     
     return (train_data, train_labels, test_data, test_labels)
 
-def assemble_1_block(split_images, label_dic, block_label, image_grid_size, log_time = True):
+def assemble_1_block(split_images, ML_labels, label_dic, image_grid_size, log_time = True, cols = 4, rows = 4):
     # Assemble targets, shuffle data, and assign training and testing sets
     # Note that I use the log_time values currently.
     # This makes time appear linearly spaced.  Perhaps helps CNN converge faster
     # targets = np.vstack((log_T_label,Fn_label,Fs_label)).T
     
     if image_grid_size == 1:
-        return assemble_old(split_images = split_images, label_dic = label_dic, 
-                            block_label = block_label, log_time = log_time)
+        return assemble_old(split_images = split_images, ML_labels = ML_labels, 
+                            block_label = label_dic['Block'], log_time = log_time)
     
     label_list = []
-    for key in label_dic:
+    for key in ML_labels:
         if key == 'T' and log_time:
             label_list.append(np.log(label_dic[key]))
         else:
@@ -115,7 +115,7 @@ def assemble_1_block(split_images, label_dic, block_label, image_grid_size, log_
     for i in np.arange(0, (split_images.shape[0] / image_grid_size)):
         test_index.append((i * image_grid_size) + subimage_ind[train_size:])
 
-    test_index = np.array(test_index).astype(np.intc).flatten()
+    test_index = np.sort(np.array(test_index).astype(np.intc).flatten())
     print('Test Index Completed...')
 
     train_data = np.delete(split_images, test_index, axis = 0)
@@ -125,16 +125,31 @@ def assemble_1_block(split_images, label_dic, block_label, image_grid_size, log_
     test_data = split_images[test_index]
     test_labels = targets[test_index]
     print('Testing Data and Labels Completed...')
-
+    split_images = []
+    
+    dic_keys = list(label_dic.keys())
+    for key in dic_keys:
+        if key in ML_labels:
+            try:
+                dic_keys.remove(key)
+            except ValueError:
+                pass
+    
+    train_metadata = {key:np.delete(label_dic[key], test_index, axis = 0) for key in dic_keys}
+    test_metadata = {key:label_dic[key][test_index] for key in dic_keys}
+    print('Training and Testing Metadata Completed...')
+    
+    label_dic = {}
 
     # TROUBLESHOOTING: Plot an array of some of the images, to try visually confirm proper selection.
-    fig,ax = plt.subplots(4,8,figsize=(20,10))
-    for i in range(32):
-        ax[i//8,i%8].matshow(test_data[i],cmap=plt.cm.gray)
-        ax[i//8,i%8].set_xticks(())
-        ax[i//8,i%8].set_yticks(())
+    fig,ax = plt.subplots(rows,cols,figsize=(20,3*cols))
+    for i in range(rows*cols):
+        ax[i//cols, i%cols].matshow(test_data[i],cmap=plt.cm.gray)
+        ax[i//cols, i%cols].set_xticks(())
+        ax[i//cols, i%cols].set_yticks(())
         
-    return (train_data, train_labels, test_data, test_labels)
+    return (train_data, train_labels, train_metadata, 
+            test_data, test_labels, test_metadata)
 
 def younger(train_data, train_labels, test_data, test_labels, time_cut = 4):
     ### REMOVE OLD ###

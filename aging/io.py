@@ -95,7 +95,7 @@ def rand_file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
             files.extend(temp)
     return (folders,files)
 
-def seq_file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
+def seq_file_names(direc = 'D:/MLdata/', which_samples = [0], num_exps = 200):
     """
     Obtains file names of the data we want to import.
     DOES NOT RANDOMLY CHOOSE FILES.
@@ -108,7 +108,9 @@ def seq_file_names(direc = 'D:/MLdata/', num_samples = 1, num_exps = 200):
     num_samples: number of samples we want to input
     num_exps = number of TOTAL experiments we want to obtain
     """
-    folders  = [filename for filename in os.listdir(direc)][:num_samples]
+    folders  = [filename for filename in os.listdir(direc)][:4]
+    folders = [folders[i] for i in which_samples]
+    print(folders)
     files = []
     
     for i in range(len(folders)):
@@ -144,14 +146,16 @@ def data_extractor(files, folders, direc = 'D:/MLdata/', crop_size = 750, split_
     T_label = []
     block_label = []
     exp_label = []
+    
+    initial_blk = int(re.search('block(.*)_', files[0]).group(1))
 
     for file in files:
         block_num = int(re.search('block(.*)_', file).group(1))
         exp_num = int(re.search('Exp(.*).mat', file).group(1))
 
-        print(direc + folders[block_num - 1] + '/Extract Data/' + file, end="\r")
+        print(direc + folders[block_num - initial_blk] + '/Extract Data/' + file, end="\r")
         # Import Matlab data
-        data = scipy.io.loadmat(direc + folders[block_num - 1] + '/Extract Data/' + file)
+        data = scipy.io.loadmat(direc + folders[block_num - initial_blk] + '/Extract Data/' + file)
 
         # Get data values from Matlab file
         Fn = data['Fn'].flatten()
@@ -181,7 +185,7 @@ def data_extractor(files, folders, direc = 'D:/MLdata/', crop_size = 750, split_
         if (len(Fn) == len(Fs) == len(T)):
             length_index.append(len(Fn))
         else:
-            print('ERROR: INCONSISTENT SIZE FOR FILE:', direc + folders[block_num - 1] + '/Extract Data/' + file)
+            print('ERROR: INCONSISTENT SIZE FOR FILE:', direc + folders[block_num - initial_blk] + '/Extract Data/' + file)
             print('Fn:', len(Fn), 'Fs:', len(Fs), 'T:', len(T))
             break
 

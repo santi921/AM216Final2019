@@ -11,59 +11,58 @@ import random
 random.seed(135)
 np.random.seed(135)
 
-def assemble_old(split_images, ML_labels, label_dic, log_time = True):
+def random_shuffle(split_images, ML_labels, label_dic, log_time = True):
     # Assemble targets, shuffle data, and assign training and testing sets
-    # Note that I use the log_time values currently.
-    # This makes time appear linearly spaced.  Perhaps helps CNN converge faster
-    # Obtain indicies for the items
     label_list = []
     for key in ML_labels:
         if key == 'T' and log_time:
             label_list.append(np.log(label_dic[key]))
+            label_dic.pop(key, None)
         else:
             label_list.append(label_dic[key])
+            label_dic.pop(key, None)
     
     targets = np.vstack(tuple(label_list)).T
     
+    train_size = int(np.floor(0.8*split_images.shape[0]))
+    
+    # Shuffle the indices
     ind = np.arange(split_images.shape[0])
-    # Shuffel the indices
     np.random.shuffle(ind)
+    
+    train_ind = np.sort(ind[:train_size])
+    test_ind = np.sort(ind[train_size:])
     print('Shuffling Index Completed...')
 
-    # Re-arrange the data using the shuffled indices
-    targets = targets[ind]
-
-    # Split train and test
-    # Set to use 80% of data for training
-    train_size = int(np.floor(0.8*split_images[ind].shape[0]))
-
     # Seperate Data
-    train_data = split_images[ind][:train_size]
-    train_labels = targets[:train_size]
+    train_data = split_images[train_ind]
+    train_labels = targets[train_ind]
     print('Training Data and Labels Completed...', train_data.shape, train_labels.shape)
 
     #Seperate Labels
-    test_data = split_images[ind,:,:][train_size:,:,:]
-    test_labels = targets[train_size:]
+    test_data = split_images[test_ind]
+    test_labels = targets[test_ind]
     print('Testing Data and Labels Completed...', test_data.shape, test_labels.shape)
     
-    return (train_data, train_labels, test_data, test_labels)
+    train_metadata = {key:label_dic[key][train_ind] for key in label_dic}
+    test_metadata = {key:label_dic[key][test_ind] for key in label_dic}
+    print('Training and Testing Metadata Completed...')
+    
+    return (train_data, train_labels, train_metadata, test_data, test_labels, test_metadata)
 
-def assemble_4_block(split_images, label_dic, block_label, log_time = True):
-    # Assemble targets, shuffle data, and assign training and testing sets
-    # Note that I use the log_time values currently.
-    # This makes time appear linearly spaced.  Perhaps helps CNN converge faster
-    # targets = np.vstack((log_T_label,Fn_label,Fs_label)).T
+def withold_exp(split_images, ML_labels, label_dic, log_time = True):
     label_list = []
-    for key in label_dic:
+    for key in ML_labels:
         if key == 'T' and log_time:
             label_list.append(np.log(label_dic[key]))
+            label_dic.pop(key, None)
         else:
             label_list.append(label_dic[key])
+            label_dic.pop(key, None)
     
     targets = np.vstack(tuple(label_list)).T
-
-    test_block_ind = np.min(np.where(block_label == np.max(block_label)))
+    blocks = label_dic['Block']
+    test_block_ind = np.min(np.where(blocks == np.max(blocks)))
     print('Test Block Index Completed...')
 
     train_data = split_images[:test_block_ind].clip(0)
@@ -74,24 +73,27 @@ def assemble_4_block(split_images, label_dic, block_label, log_time = True):
     test_labels = targets[test_block_ind:]
     print('Testing Data and Labels Completed...', test_data.shape, test_labels.shape)
     
-    return (train_data, train_labels, test_data, test_labels)
+    train_metadata = {key:label_dic[key][:test_block_ind] for key in label_dic}
+    test_metadata = {key:label_dic[key][test_block_ind:] for key in label_dic}
+    print('Training and Testing Metadata Completed...')
+    
+    return (train_data, train_labels, train_metadata, test_data, test_labels, test_metadata)
 
-def assemble_1_block(split_images, ML_labels, label_dic, image_grid_size, log_time = True, cols = 4, rows = 4):
+def withhold_sqr(split_images, ML_labels, label_dic, image_grid_size, log_time = True, cols = 4, rows = 4):
     # Assemble targets, shuffle data, and assign training and testing sets
-    # Note that I use the log_time values currently.
-    # This makes time appear linearly spaced.  Perhaps helps CNN converge faster
-    # targets = np.vstack((log_T_label,Fn_label,Fs_label)).T
     
     if image_grid_size == 1:
-        return assemble_old(split_images = split_images, ML_labels = ML_labels, 
+        return random_shuffle(split_images = split_images, ML_labels = ML_labels, 
                             block_label = label_dic['Block'], log_time = log_time)
     
     label_list = []
     for key in ML_labels:
         if key == 'T' and log_time:
             label_list.append(np.log(label_dic[key]))
+            label_dic.pop(key, None)
         else:
             label_list.append(label_dic[key])
+            label_dic.pop(key, None)
     
     targets = np.vstack(tuple(label_list)).T
     
@@ -125,7 +127,6 @@ def assemble_1_block(split_images, ML_labels, label_dic, image_grid_size, log_ti
     test_data = split_images[test_index]
     test_labels = targets[test_index]
     print('Testing Data and Labels Completed...')
-    split_images = []
     
     dic_keys = list(label_dic.keys())
     for key in dic_keys:
@@ -139,8 +140,6 @@ def assemble_1_block(split_images, ML_labels, label_dic, image_grid_size, log_ti
     test_metadata = {key:label_dic[key][test_index] for key in dic_keys}
     print('Training and Testing Metadata Completed...')
     
-    label_dic = {}
-
     # TROUBLESHOOTING: Plot an array of some of the images, to try visually confirm proper selection.
     fig,ax = plt.subplots(rows,cols,figsize=(20,3*cols))
     for i in range(rows*cols):

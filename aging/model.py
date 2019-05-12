@@ -10,7 +10,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from keras.utils import plot_model
+from tensorflow.keras.utils import plot_model
 
 
 

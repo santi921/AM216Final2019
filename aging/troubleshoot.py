@@ -151,12 +151,12 @@ def hist_plotter(history, savename):
     plt.savefig(savename + ".png", dpi = 600, bbox_inches='tight')
     plt.show()
     
-def data_plotter(times, pred_times, savename, lim = 9, **kwargs):
+def data_plotter(times, pred_times, savename, name, lim = 9, **kwargs):
     plt.figure()
     for i in range(times.shape[1]):
         plt.scatter(times[:,i], pred_times[:,i], **kwargs)
     plt.plot([0, lim], [0, lim], '-r') 
-    plt.title(savename + ', R = '+str(np.round(pearsonr(times.flatten(), pred_times.flatten())[0], 3)))
+    plt.title(name + ', R = '+str(np.round(pearsonr(times.flatten(), pred_times.flatten())[0], 3)))
     plt.xlim(0,lim)
     plt.ylim(0,lim)
     plt.xlabel('Actual Age [ln(sec)]')

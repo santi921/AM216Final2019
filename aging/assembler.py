@@ -122,11 +122,11 @@ def withhold_sqr(split_images, ML_labels, label_dic, image_grid_size, log_time =
 
     train_data = np.delete(split_images, test_index, axis = 0)
     train_labels = np.delete(targets, test_index, axis = 0)
-    print('Training Data and Labels Completed...')
+    print('Training Data and Labels Completed...', train_data.shape, train_labels.shape)
 
     test_data = split_images[test_index]
     test_labels = targets[test_index]
-    print('Testing Data and Labels Completed...')
+    print('Testing Data and Labels Completed...', test_data.shape, test_labels.shape)
     
     dic_keys = list(label_dic.keys())
     for key in dic_keys:
@@ -141,11 +141,13 @@ def withhold_sqr(split_images, ML_labels, label_dic, image_grid_size, log_time =
     print('Training and Testing Metadata Completed...')
     
     # TROUBLESHOOTING: Plot an array of some of the images, to try visually confirm proper selection.
-    fig,ax = plt.subplots(rows,cols,figsize=(20,3*cols))
+    fig,ax = plt.subplots(rows,cols,figsize=(3*cols,4*cols))
     for i in range(rows*cols):
         ax[i//cols, i%cols].matshow(test_data[i],cmap=plt.cm.gray)
         ax[i//cols, i%cols].set_xticks(())
         ax[i//cols, i%cols].set_yticks(())
+    plt.tight_layout()
+    plt.show()
         
     return (train_data, train_labels, train_metadata, 
             test_data, test_labels, test_metadata)

@@ -121,7 +121,7 @@ def intensity_plotter(length_index, label_dic, split_images,
                 intense /= np.max(intense)
             time = T[exp_start_ind + k - 1: exp_end_ind : image_grid_size]
             if log_plot:
-                ax.loglogplot(time, intense, '.', label = str(k))
+                ax.loglog(time, intense, '.', label = str(k))
             else:
                 ax.plot(time, intense, '.', label = str(k))
         ax.set_xlim(0,np.max(T))

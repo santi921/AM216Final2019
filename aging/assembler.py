@@ -50,7 +50,12 @@ def random_shuffle(split_images, ML_labels, label_dic, log_time = True):
     
     return (train_data, train_labels, train_metadata, test_data, test_labels, test_metadata)
 
-def withold_exp(split_images, ML_labels, label_dic, log_time = True):
+def withold_exp(split_images, ML_labels, label_dic, log_time = True, norm_split = False):
+    
+    if norm_split:
+        for i in range(split_images.shape[0]):
+            split_images[i] /= np.max(split_images[i])
+    
     label_list = []
     for key in ML_labels:
         if key == 'T' and log_time:
@@ -79,12 +84,16 @@ def withold_exp(split_images, ML_labels, label_dic, log_time = True):
     
     return (train_data, train_labels, train_metadata, test_data, test_labels, test_metadata)
 
-def withhold_sqr(split_images, ML_labels, label_dic, image_grid_size, log_time = True, cols = 4, rows = 4):
+def withhold_sqr(split_images, ML_labels, label_dic, image_grid_size, log_time = True, norm_split = False, cols = 4, rows = 4):
     # Assemble targets, shuffle data, and assign training and testing sets
     
     if image_grid_size == 1:
         return random_shuffle(split_images = split_images, ML_labels = ML_labels, 
                             block_label = label_dic['Block'], log_time = log_time)
+        
+    if norm_split:
+        for i in range(split_images.shape[0]):
+            split_images[i] /= np.max(split_images[i])
     
     label_list = []
     for key in ML_labels:

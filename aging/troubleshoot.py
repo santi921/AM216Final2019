@@ -156,7 +156,7 @@ def data_plotter(times, pred_times, savename, lim = 9, **kwargs):
     for i in range(times.shape[1]):
         plt.scatter(times[:,i], pred_times[:,i], **kwargs)
     plt.plot([0, lim], [0, lim], '-r') 
-    plt.title('Data, R = '+str(np.round(pearsonr(times.flatten(), pred_times.flatten())[0], 3)))
+    plt.title(savename + ', R = '+str(np.round(pearsonr(times.flatten(), pred_times.flatten())[0], 3)))
     plt.xlim(0,lim)
     plt.ylim(0,lim)
     plt.xlabel('Actual Age [ln(sec)]')
